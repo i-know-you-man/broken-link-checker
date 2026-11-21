@@ -117,7 +117,7 @@ st.markdown(
     }
 
     .block-container {
-        padding-top: 1.4rem;
+        padding-top: 4.5rem !important;
         padding-bottom: 2.5rem;
         max-width: 1280px;
     }
@@ -270,22 +270,26 @@ st.markdown(
 
     /* Eventor Hero Header */
     .ev-hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         text-align: center;
-        padding: 0.35rem 0 1.25rem 0;
+        width: 100%;
+        padding: 0.5rem 0 1.35rem 0;
     }
     .ev-status-pill {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.34rem 0.95rem;
+        padding: 0.36rem 1rem;
         border-radius: 9999px;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.12);
         backdrop-filter: blur(8px);
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         font-weight: 500;
         color: #cbd5e1;
-        margin-bottom: 0.85rem;
+        margin-bottom: 0.9rem;
     }
     .ev-dot {
         width: 8px;
@@ -307,7 +311,8 @@ st.markdown(
         color: #ffffff;
         letter-spacing: -0.03em;
         line-height: 1.18;
-        margin: 0;
+        margin: 0 !important;
+        text-align: center !important;
     }
     .ev-grad-text {
         background: linear-gradient(90deg, #a78bfa 0%, #fb7185 55%, #a78bfa 100%);
@@ -318,9 +323,11 @@ st.markdown(
     .ev-hero-sub {
         color: var(--ev-muted);
         font-size: 0.95rem;
+        width: 100%;
         max-width: 720px;
-        margin: 0.6rem auto 0 auto;
-        line-height: 1.55;
+        margin: 0.7rem auto 0 auto !important;
+        text-align: center !important;
+        line-height: 1.6;
     }
 
     /* Eventor Frosted Glass KPI Cards (Option 2 Style) */
@@ -334,6 +341,10 @@ st.markdown(
         backdrop-filter: blur(10px);
         text-align: center;
         transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        min-height: 136px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         height: 100%;
     }
     .kpi-card::before {
@@ -401,16 +412,38 @@ st.markdown(
     }
     .kpi-ok .kpi-value { color: #34d399; }
 
-    /* Welcome Feature Cards */
+    /* Welcome Feature Cards — True Equal-Height CSS Grid */
+    .ev-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+        width: 100%;
+    }
+    @media (max-width: 900px) {
+        .ev-feature-grid {
+            grid-template-columns: 1fr;
+        }
+    }
     .ev-feature-card {
         position: relative;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
         background: rgba(17, 24, 39, 0.8);
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 16px;
         padding: 1.25rem 1.25rem 1.15rem 1.25rem;
         height: 100%;
+        box-sizing: border-box;
         transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .ev-feature-card code {
+        background: rgba(139, 92, 246, 0.15);
+        color: #c4b5fd;
+        padding: 0.08rem 0.36rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
     }
     .ev-feature-card:hover {
         border-color: rgba(139, 92, 246, 0.42);
@@ -1311,9 +1344,9 @@ if _existing_report and not start_scan:
                 <span>Scan Completed · {_existing_report['timestamp']} (UTC+7){_host_pill}</span>
             </div>
             <h1 class="ev-hero-title">Site Audit <span class="ev-grad-text">Overview</span></h1>
-            <p class="ev-hero-sub">
+            <div class="ev-hero-sub">
                 สรุปผลตรวจสอบลิงก์เสีย Redirect และ Deep Check แยกหมวดหมู่สถานะพร้อมหลักฐานภาพหน้าจอ 404 Highlight
-            </p>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1327,10 +1360,10 @@ else:
                 <span>Fast Broken Link, Redirect &amp; Soft 404 Inspector</span>
             </div>
             <h1 class="ev-hero-title">Broken Link, Redirect &amp; <span class="ev-grad-text">Soft 404 Checker</span></h1>
-            <p class="ev-hero-sub">
+            <div class="ev-hero-sub">
                 ตรวจสอบลิงก์เสีย แยกสถานะชัดเจนพร้อมตัวกรอง ข้าม Social Media อัตโนมัติ
                 แคปภาพ Highlight ปุ่มที่มีปัญหาเฉพาะ 404 และตรวจจับหน้าขาว / Soft 404 ในคลิกเดียว
-            </p>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1535,10 +1568,9 @@ if not report:
         unsafe_allow_html=True,
     )
 
-    col_a, col_b, col_c = st.columns(3)
-    with col_a:
-        st.markdown(
-            """
+    st.markdown(
+        """
+        <div class="ev-feature-grid">
             <div class="ev-feature-card">
                 <div class="ev-feature-icon ev-fi-violet">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1553,12 +1585,6 @@ if not report:
                     <li><strong>Ignore Social Media:</strong> ข้าม Facebook, IG, TikTok, X, LINE ลด False Positive</li>
                 </ul>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col_b:
-        st.markdown(
-            """
             <div class="ev-feature-card">
                 <div class="ev-feature-icon ev-fi-rose">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1572,12 +1598,6 @@ if not report:
                     <li>แคปภาพพร้อม <strong>วง/Highlight ปุ่มที่เสีย</strong> บนหน้าต้นทาง <strong>เฉพาะ 404 เท่านั้น</strong></li>
                 </ul>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col_c:
-        st.markdown(
-            """
             <div class="ev-feature-card">
                 <div class="ev-feature-icon ev-fi-indigo">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1592,9 +1612,10 @@ if not report:
                     <li>จำลองคลิกปุ่มจริงพร้อม <code>?gclid=...&amp;utm_...</code> และ Export Excel / CSV</li>
                 </ul>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if SHOW_HISTORY_UI:
         st.divider()
