@@ -7,9 +7,12 @@ from __future__ import annotations
 
 import hmac
 import io
+import logging
 import os
 from collections import Counter
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 import pandas as pd
 import streamlit as st
@@ -585,6 +588,24 @@ def render_scan_history_panel(key_prefix: str = "hist") -> None:
             )
 
 
+def _is_history_ui_enabled() -> bool:
+    """
+    Control whether Scan History UI is visible in the web app.
+    Defaults to False so regular users never see scan logs; admins view logs
+    directly in their private Google Sheet. Set SHOW_HISTORY_UI = true in
+    Streamlit Secrets only if you explicitly want to display it in the UI.
+    """
+    raw: object = os.environ.get("SHOW_HISTORY_UI", "")
+    if not str(raw).strip():
+        try:
+            raw = st.secrets.get("SHOW_HISTORY_UI", False)
+        except Exception:
+            raw = False
+    if isinstance(raw, bool):
+        return raw
+    return str(raw).strip().lower() in ("1", "true", "yes", "on")
+
+
 def _get_configured_password() -> str:
     """Read optional APP_PASSWORD from environment or Streamlit Cloud secrets."""
     env_pw = os.environ.get("APP_PASSWORD", "").strip()
@@ -621,6 +642,7 @@ def _enforce_optional_password() -> None:
 
 
 _enforce_optional_password()
+SHOW_HISTORY_UI = _is_history_ui_enabled()
 
 
 # ---------------------------------------------------------------------------
@@ -829,11 +851,12 @@ with st.sidebar:
 
     st.divider()
     start_scan = st.button("🚀 Start Scan", type="primary", width="stretch")
-    _sidebar_storage = get_storage_backend_info()
-    if _sidebar_storage["is_cloud_persistent"]:
-        st.caption(f"☁️ Log ประวัติ: **{_sidebar_storage['label']}**")
-    else:
-        st.caption("💾 Log ประวัติ: **Local CSV** (ตั้งค่า Google Sheets ใน Secrets เพื่อเก็บถาวร)")
+    if SHOW_HISTORY_UI:
+        _sidebar_storage = get_storage_backend_info()
+        if _sidebar_storage["is_cloud_persistent"]:
+            st.caption(f"☁️ Log ประวัติ: **{_sidebar_storage['label']}**")
+        else:
+            st.caption("💾 Log ประวัติ: **Local CSV** (ตั้งค่า Google Sheets ใน Secrets เพื่อเก็บถาวร)")
 
 
 # ---------------------------------------------------------------------------
@@ -992,6 +1015,8 @@ if start_scan:
                 notes=f"Warnings: {len(scan_warnings)}" if scan_warnings else "",
             )
             log_ok, log_backend, log_msg = record_scan_history(log_entry)
+            if not log_ok:
+                logger.warning("Scan history log failed (%s): %s", log_backend, log_msg)
             st.session_state.pop("scan_history_cache", None)
 
             st.session_state["scan_report"] = {
@@ -1014,7 +1039,9 @@ if start_scan:
                 status="Error",
                 notes=str(exc)[:300],
             )
-            record_scan_history(err_entry)
+            err_ok, err_backend, err_msg = record_scan_history(err_entry)
+            if not err_ok:
+                logger.warning("Error scan history log failed (%s): %s", err_backend, err_msg)
             st.session_state.pop("scan_history_cache", None)
 
 
@@ -1051,8 +1078,9 @@ if not report:
             "- จำลองคลิกปุ่มจริงพร้อม `?gclid=...&utm_...` และ Export Excel/CSV"
         )
 
-    st.divider()
-    render_scan_history_panel(key_prefix="home_hist")
+    if SHOW_HISTORY_UI:
+        st.divider()
+        render_scan_history_panel(key_prefix="home_hist")
 else:
     summary: CrawlSummary = report["summary"]
     deep_results: list[DeepCheckResult] = report["deep_results"]
@@ -1069,13 +1097,14 @@ else:
         + (f" | Strict Hostname: `{summary.target_hostname}`" if summary.target_hostname else "")
     )
 
-    log_status = report.get("log_status")
-    if log_status:
-        log_ok, _log_backend, log_msg = log_status
-        if log_ok:
-            st.caption(f"📝 {log_msg}")
-        else:
-            st.warning(f"⚠️ {log_msg}")
+    if SHOW_HISTORY_UI:
+        log_status = report.get("log_status")
+        if log_status:
+            log_ok, _log_backend, log_msg = log_status
+            if log_ok:
+                st.caption(f"📝 {log_msg}")
+            else:
+                st.warning(f"⚠️ {log_msg}")
 
     if summary.skipped_social_count > 0:
         st.info(
@@ -1194,15 +1223,18 @@ else:
 
     st.markdown("")
 
-    # 4 Report Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(
-        [
-            f"❌ Broken / Error Links ({len(broken_df)})",
-            f"↪️ Redirected Links ({len(redirect_df)})",
-            f"🕵️ Deep Check Issues ({len(deep_issues_df)})",
-            "🕒 ประวัติการสแกน (Scan History)",
-        ]
-    )
+    # Report Tabs (Scan History tab is hidden from regular users by default)
+    report_tab_labels = [
+        f"❌ Broken / Error Links ({len(broken_df)})",
+        f"↪️ Redirected Links ({len(redirect_df)})",
+        f"🕵️ Deep Check Issues ({len(deep_issues_df)})",
+    ]
+    if SHOW_HISTORY_UI:
+        report_tab_labels.append("🕒 ประวัติการสแกน (Scan History)")
+        tab1, tab2, tab3, tab4 = st.tabs(report_tab_labels)
+    else:
+        tab1, tab2, tab3 = st.tabs(report_tab_labels)
+        tab4 = None
 
     # --- Tab 1: Broken Links ---
     with tab1:
@@ -1543,6 +1575,7 @@ else:
                     },
                 )
 
-    # --- Tab 4: Scan History & Timestamp ---
-    with tab4:
-        render_scan_history_panel(key_prefix="report_hist")
+    # --- Tab 4: Scan History & Timestamp (only when SHOW_HISTORY_UI = true) ---
+    if tab4 is not None:
+        with tab4:
+            render_scan_history_panel(key_prefix="report_hist")

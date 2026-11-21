@@ -41,7 +41,13 @@ function getOrCreateSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
+    const firstSheet = ss.getSheets()[0];
+    if (firstSheet && firstSheet.getLastRow() === 0) {
+      firstSheet.setName(SHEET_NAME);
+      sheet = firstSheet;
+    } else {
+      sheet = ss.insertSheet(SHEET_NAME);
+    }
   }
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);

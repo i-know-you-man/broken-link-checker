@@ -35,8 +35,8 @@
 
 ### 4. รายงาน, ประวัติการสแกน (Timestamp) & Export
 - KPI Summary Cards แสดงยอดสรุปครบทุกหมวด
-- แยกแท็บรายงาน 4 แท็บ (`Broken Links`, `Redirected Links`, `Deep Check Issues`, `Scan History`) พร้อมตัวกรองค้นหาและภาพ Screenshot
-- **ระบบบันทึก Timestamp & ประวัติเว็บไซต์ที่ตรวจ (เวลาประเทศไทย UTC+7):** บันทึกอัตโนมัติทุกครั้งที่กด Start Scan รองรับทั้ง **Google Sheets** (เก็บถาวรบน Cloud) และไฟล์สำรอง `scan_history.csv` พร้อมปุ่มทดสอบการเชื่อมต่อและดาวน์โหลดประวัติ
+- แยกแท็บรายงาน 3 แท็บ (`Broken Links`, `Redirected Links`, `Deep Check Issues`) พร้อมตัวกรองค้นหาและภาพ Screenshot
+- **ระบบบันทึก Timestamp & ประวัติเว็บไซต์ที่ตรวจแบบซ่อนหลังบ้าน (เวลาประเทศไทย UTC+7):** บันทึกอัตโนมัติลง **Google Sheets** ส่วนตัวของ Admin ทุกครั้งที่มีการกด Start Scan โดยซ่อนไม่ให้ User ทั่วไปเห็นบนหน้าเว็บ (หากต้องการเปิดดูบนหน้าเว็บเพื่อทดสอบ สามารถตั้ง `SHOW_HISTORY_UI = true` ใน Secrets ได้)
 - ปุ่มดาวน์โหลด **Excel (.xlsx)** แยก 3 ชีต (`Broken_Links`, `Redirected_Links`, `Deep_Check_Issues`) และไฟล์ **CSV** (รองรับภาษาไทยใน Excel ด้วย UTF-8-SIG)
 
 ---

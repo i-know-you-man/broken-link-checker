@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -341,9 +342,23 @@ def _load_via_service_account(limit: int = 200, secrets: Mapping[str, Any] | Non
 # Backend 2: Google Sheets via Apps Script Webhook
 # ---------------------------------------------------------------------------
 
+def _normalize_webhook_url(url: str) -> str:
+    cleaned = (url or "").strip()
+    # Fix Chrome multi-account URLs like /macros/u/1/s/.../exec -> /macros/s/.../exec
+    cleaned = re.sub(r"/macros/u/\d+/s/", "/macros/s/", cleaned)
+    return cleaned
+
+
 def _parse_apps_script_json(resp: requests.Response) -> dict[str, Any]:
     content_type = (resp.headers.get("Content-Type") or "").lower()
     text_preview = (resp.text or "").strip()
+
+    if resp.status_code == 403:
+        raise RuntimeError(
+            "HTTP 403 (Forbidden) จาก Google Apps Script — กรุณาตรวจสอบ 2 จุด: "
+            "1) ตอน Deploy Web app ต้องตั้ง 'Who has access' เป็น 'Anyone (ทุกคน)' (ไม่ใช่ Only myself หรือ Anyone with Google account) "
+            "2) URL ใน Secrets ต้องเป็น Web app URL ที่ลงท้ายด้วย /exec (ไม่ใช่ /dev หรือลิงก์หน้าแก้ไข)"
+        )
 
     if resp.status_code >= 400:
         raise RuntimeError(f"HTTP {resp.status_code} จาก Google Apps Script")
@@ -367,13 +382,14 @@ def _parse_apps_script_json(resp: requests.Response) -> dict[str, Any]:
 
 
 def _append_via_webhook(entry: ScanLogEntry, secrets: Mapping[str, Any] | None = None) -> None:
-    webhook_url = _read_setting("GSHEET_WEBHOOK_URL", secrets)
+    webhook_url = _normalize_webhook_url(_read_setting("GSHEET_WEBHOOK_URL", secrets))
     token = _read_setting("GSHEET_WEBHOOK_TOKEN", secrets)
     payload = entry.to_webhook_payload(token=token)
 
     resp = requests.post(
         webhook_url,
         json=payload,
+        headers={"Accept": "application/json"},
         timeout=15,
         allow_redirects=True,
     )
@@ -381,7 +397,7 @@ def _append_via_webhook(entry: ScanLogEntry, secrets: Mapping[str, Any] | None =
 
 
 def _load_via_webhook(limit: int = 200, secrets: Mapping[str, Any] | None = None) -> pd.DataFrame:
-    webhook_url = _read_setting("GSHEET_WEBHOOK_URL", secrets)
+    webhook_url = _normalize_webhook_url(_read_setting("GSHEET_WEBHOOK_URL", secrets))
     token = _read_setting("GSHEET_WEBHOOK_TOKEN", secrets)
     params: dict[str, Any] = {"limit": limit}
     if token:
@@ -390,6 +406,7 @@ def _load_via_webhook(limit: int = 200, secrets: Mapping[str, Any] | None = None
     resp = requests.get(
         webhook_url,
         params=params,
+        headers={"Accept": "application/json"},
         timeout=15,
         allow_redirects=True,
     )
