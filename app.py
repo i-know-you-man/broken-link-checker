@@ -201,6 +201,9 @@ st.markdown(
         border-color: #8b5cf6 !important;
         box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.22) !important;
     }
+    [data-testid="InputInstructions"] {
+        display: none !important;
+    }
 
     /* Segmented Control (Scan Mode Pills) */
     [data-testid="stSidebar"] [data-testid="stButtonGroup"] {
