@@ -67,89 +67,506 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 2rem;
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+        --ev-bg: #030712;
+        --ev-sidebar: #0b1120;
+        --ev-surface: #111827;
+        --ev-surface-soft: rgba(17, 24, 39, 0.78);
+        --ev-border: rgba(148, 163, 184, 0.16);
+        --ev-border-strong: rgba(139, 92, 246, 0.42);
+        --ev-violet: #8b5cf6;
+        --ev-violet-light: #a78bfa;
+        --ev-rose: #f43f5e;
+        --ev-rose-light: #fb7185;
+        --ev-amber: #f59e0b;
+        --ev-emerald: #10b981;
+        --ev-text: #f8fafc;
+        --ev-muted: #94a3b8;
+        --ev-font: 'Space Grotesk', 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
+        --ev-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     }
-    .kpi-card {
-        border: 1px solid rgba(128, 128, 128, 0.25);
+
+    /* Typography — scoped carefully so Streamlit Material icons remain intact */
+    html, body, [data-testid="stAppViewContainer"], .stMarkdown,
+    p, h1, h2, h3, h4, label, input, textarea, button {
+        font-family: var(--ev-font);
+    }
+
+    code, pre {
+        font-family: var(--ev-mono);
+    }
+
+    /* Eventor Obsidian Canvas + Geometric Grid + Ambient Violet/Rose Glow */
+    [data-testid="stAppViewContainer"] {
+        background-color: var(--ev-bg);
+        background-image:
+            radial-gradient(640px circle at 10% 4%, rgba(139, 92, 246, 0.22), transparent 62%),
+            radial-gradient(560px circle at 94% 92%, rgba(244, 63, 94, 0.16), transparent 60%),
+            linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px;
+        background-attachment: fixed;
+        color: var(--ev-text);
+    }
+
+    [data-testid="stHeader"] {
+        background: rgba(3, 7, 18, 0.55);
+        backdrop-filter: blur(10px);
+    }
+
+    .block-container {
+        padding-top: 1.4rem;
+        padding-bottom: 2.5rem;
+        max-width: 1280px;
+    }
+
+    /* Left Pro Sidebar Studio */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0b1120 0%, #060b16 100%);
+        border-right: 1px solid var(--ev-border);
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding-top: 1.1rem;
+    }
+
+    /* Sidebar Brand Lockup */
+    .ev-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.78rem;
+        padding: 0.15rem 0.1rem 0.9rem 0.1rem;
+        margin-bottom: 0.35rem;
+    }
+    .ev-brand-icon {
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
-        padding: 1rem 1.15rem;
-        background: rgba(128, 128, 128, 0.05);
+        background: linear-gradient(135deg, #8b5cf6 0%, #f43f5e 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.38);
+        flex-shrink: 0;
+    }
+    .ev-brand-title {
+        font-size: 1.18rem;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+    .ev-brand-sub {
+        font-size: 0.76rem;
+        color: var(--ev-muted);
+        margin-top: 0.12rem;
+    }
+
+    .ev-card-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #f8fafc;
+        margin: 0 0 0.45rem 0;
+        letter-spacing: -0.01em;
+    }
+
+    /* Dark Glass Cards (Sidebar + Main bordered containers) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(17, 24, 39, 0.72);
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
+        border-radius: 16px !important;
         transition: border-color 0.2s ease;
+    }
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        border-color: rgba(139, 92, 246, 0.36) !important;
+    }
+
+    [data-testid="stMain"] [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(17, 24, 39, 0.78);
+        border: 1px solid rgba(148, 163, 184, 0.15) !important;
+        border-radius: 16px !important;
+    }
+
+    /* Inputs & Selects */
+    .stTextInput input, .stTextArea textarea {
+        background-color: #030712 !important;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        border-radius: 10px !important;
+        color: #f8fafc !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.22) !important;
+    }
+
+    /* Segmented Control (Scan Mode Pills) */
+    [data-testid="stSidebar"] [data-testid="stButtonGroup"] {
+        background: rgba(3, 7, 18, 0.65);
+        padding: 3px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    [data-testid="stSidebar"] [data-testid="stButtonGroup"] button {
+        border-radius: 999px !important;
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+        border: none !important;
+    }
+
+    /* Eventor Signature Primary Gradient Pill CTA (Start Scan & Login) */
+    [data-testid="stSidebar"] button[kind="primary"],
+    [data-testid="stFormSubmitButton"] button[kind="primary"] {
+        background: linear-gradient(90deg, #8b5cf6 0%, #f43f5e 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 9999px !important;
+        font-weight: 700 !important;
+        font-size: 0.96rem !important;
+        padding: 0.62rem 1.25rem !important;
+        box-shadow: 0 8px 24px rgba(139, 92, 246, 0.36) !important;
+        transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
+        cursor: pointer;
+    }
+    [data-testid="stSidebar"] button[kind="primary"]:hover,
+    [data-testid="stFormSubmitButton"] button[kind="primary"]:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.06);
+        box-shadow: 0 10px 30px rgba(244, 63, 94, 0.42) !important;
+    }
+
+    /* Export Pill Download Buttons */
+    [data-testid="stDownloadButton"] button {
+        border-radius: 9999px !important;
+        font-size: 0.84rem !important;
+        font-weight: 600 !important;
+        padding: 0.46rem 1rem !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer;
+    }
+    [data-testid="stDownloadButton"] button[kind="primary"] {
+        background: rgba(139, 92, 246, 0.16) !important;
+        border: 1.5px solid #8b5cf6 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 18px rgba(139, 92, 246, 0.25) !important;
+    }
+    [data-testid="stDownloadButton"] button[kind="primary"]:hover {
+        background: linear-gradient(90deg, #8b5cf6 0%, #f43f5e 100%) !important;
+        border-color: transparent !important;
+        box-shadow: 0 6px 22px rgba(244, 63, 94, 0.32) !important;
+    }
+    [data-testid="stDownloadButton"] button[kind="secondary"] {
+        background: rgba(17, 24, 39, 0.85) !important;
+        border: 1px solid rgba(148, 163, 184, 0.24) !important;
+        color: #e2e8f0 !important;
+    }
+    [data-testid="stDownloadButton"] button[kind="secondary"]:hover {
+        border-color: #8b5cf6 !important;
+        color: #ffffff !important;
+        background: rgba(139, 92, 246, 0.12) !important;
+    }
+
+    /* Eventor Hero Header */
+    .ev-hero {
+        text-align: center;
+        padding: 0.35rem 0 1.25rem 0;
+    }
+    .ev-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.34rem 0.95rem;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px);
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #cbd5e1;
+        margin-bottom: 0.85rem;
+    }
+    .ev-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 9999px;
+        display: inline-block;
+    }
+    .ev-dot-rose {
+        background: #fb7185;
+        box-shadow: 0 0 10px #f43f5e;
+    }
+    .ev-dot-ok {
+        background: #10b981;
+        box-shadow: 0 0 10px #10b981;
+    }
+    .ev-hero-title {
+        font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.03em;
+        line-height: 1.18;
+        margin: 0;
+    }
+    .ev-grad-text {
+        background: linear-gradient(90deg, #a78bfa 0%, #fb7185 55%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .ev-hero-sub {
+        color: var(--ev-muted);
+        font-size: 0.95rem;
+        max-width: 720px;
+        margin: 0.6rem auto 0 auto;
+        line-height: 1.55;
+    }
+
+    /* Eventor Frosted Glass KPI Cards (Option 2 Style) */
+    .kpi-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 16px;
+        padding: 1.15rem 1.05rem 1rem 1.05rem;
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.62) 0%, rgba(15, 23, 42, 0.86) 100%);
+        backdrop-filter: blur(10px);
+        text-align: center;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         height: 100%;
+    }
+    .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #64748b, #94a3b8);
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(148, 163, 184, 0.34);
+    }
+    .kpi-value {
+        font-size: 2.05rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
     }
     .kpi-label {
         font-size: 0.84rem;
-        opacity: 0.78;
-        margin-bottom: 0.25rem;
-        font-weight: 500;
-    }
-    .kpi-value {
-        font-size: 1.85rem;
-        font-weight: 700;
-        line-height: 1.15;
+        color: #cbd5e1;
+        margin-top: 0.38rem;
+        font-weight: 600;
     }
     .kpi-sub {
-        font-size: 0.75rem;
-        opacity: 0.72;
-        margin-top: 0.3rem;
+        font-size: 0.74rem;
+        color: var(--ev-muted);
+        margin-top: 0.24rem;
         line-height: 1.35;
     }
-    .kpi-danger .kpi-value { color: #e5484d; }
-    .kpi-warn .kpi-value { color: #f59e0b; }
-    .kpi-purple .kpi-value { color: #8b5cf6; }
-    .kpi-ok .kpi-value { color: #10b981; }
+
+    .kpi-info::before { background: linear-gradient(90deg, #38bdf8, #818cf8); }
+    .kpi-info { border-color: rgba(56, 189, 248, 0.22); }
+
+    .kpi-danger::before { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+    .kpi-danger {
+        border-color: rgba(244, 63, 94, 0.38);
+        background: linear-gradient(180deg, rgba(136, 19, 55, 0.36) 0%, rgba(17, 24, 39, 0.88) 100%);
+    }
+    .kpi-danger .kpi-value { color: #fb7185; }
+
+    .kpi-warn::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .kpi-warn {
+        border-color: rgba(245, 158, 11, 0.36);
+        background: linear-gradient(180deg, rgba(120, 53, 15, 0.32) 0%, rgba(17, 24, 39, 0.88) 100%);
+    }
+    .kpi-warn .kpi-value { color: #fbbf24; }
+
+    .kpi-purple::before { background: linear-gradient(90deg, #8b5cf6, #c084fc); }
+    .kpi-purple {
+        border-color: rgba(139, 92, 246, 0.42);
+        background: linear-gradient(180deg, rgba(46, 16, 101, 0.46) 0%, rgba(17, 24, 39, 0.88) 100%);
+    }
+    .kpi-purple .kpi-value { color: #a78bfa; }
+
+    .kpi-ok::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .kpi-ok {
+        border-color: rgba(16, 185, 129, 0.32);
+        background: linear-gradient(180deg, rgba(6, 78, 59, 0.3) 0%, rgba(17, 24, 39, 0.88) 100%);
+    }
+    .kpi-ok .kpi-value { color: #34d399; }
+
+    /* Welcome Feature Cards */
+    .ev-feature-card {
+        position: relative;
+        overflow: hidden;
+        background: rgba(17, 24, 39, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 16px;
+        padding: 1.25rem 1.25rem 1.15rem 1.25rem;
+        height: 100%;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .ev-feature-card:hover {
+        border-color: rgba(139, 92, 246, 0.42);
+        transform: translateY(-2px);
+    }
+    .ev-feature-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+    }
+    .ev-fi-violet { background: rgba(139, 92, 246, 0.16); border: 1px solid rgba(139, 92, 246, 0.35); color: #a78bfa; }
+    .ev-fi-rose   { background: rgba(244, 63, 94, 0.16); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185; }
+    .ev-fi-indigo { background: rgba(99, 102, 241, 0.16); border: 1px solid rgba(129, 140, 248, 0.35); color: #c4b5fd; }
+    .ev-feature-title {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.55rem;
+    }
+    .ev-feature-list {
+        margin: 0;
+        padding-left: 1.05rem;
+        color: #cbd5e1;
+        font-size: 0.86rem;
+        line-height: 1.6;
+    }
+    .ev-feature-list li {
+        margin-bottom: 0.32rem;
+    }
+
+    .ev-cta-hint {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 0.85rem 1.2rem;
+        border-radius: 14px;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .ev-toolbar-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ev-muted);
+        margin-bottom: 0.45rem;
+    }
+
+    /* Eventor Segmented Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background: rgba(17, 24, 39, 0.88);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 14px;
+        padding: 5px;
+        gap: 6px;
+        margin-bottom: 0.75rem;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px !important;
+        padding: 0.48rem 1rem !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
+        background: transparent !important;
+        border: none !important;
+        transition: all 0.18s ease !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #f8fafc !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #8b5cf6 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35) !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"],
+    .stTabs [data-baseweb="tab-border"] {
+        display: none !important;
+    }
+
+    /* Issue Badges & Status Chips */
     .issue-badge {
         display: inline-block;
-        padding: 0.2rem 0.6rem;
-        border-radius: 999px;
+        padding: 0.22rem 0.68rem;
+        border-radius: 9999px;
         font-size: 0.78rem;
         font-weight: 600;
         margin-right: 0.4rem;
         margin-bottom: 0.2rem;
     }
     .badge-soft404 {
-        background: rgba(229, 72, 77, 0.16);
-        color: #e5484d;
-        border: 1px solid rgba(229, 72, 77, 0.35);
+        background: rgba(244, 63, 94, 0.18);
+        color: #fb7185;
+        border: 1px solid rgba(244, 63, 94, 0.42);
     }
     .badge-blank {
-        background: rgba(139, 92, 246, 0.16);
-        color: #8b5cf6;
-        border: 1px solid rgba(139, 92, 246, 0.35);
+        background: rgba(139, 92, 246, 0.18);
+        color: #a78bfa;
+        border: 1px solid rgba(139, 92, 246, 0.42);
     }
     .badge-ad {
-        background: rgba(245, 158, 11, 0.16);
-        color: #d97706;
-        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.18);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.42);
     }
     .badge-device {
-        background: rgba(59, 130, 246, 0.14);
-        color: #3b82f6;
-        border: 1px solid rgba(59, 130, 246, 0.3);
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.35);
     }
     .badge-neutral {
-        background: rgba(128, 128, 128, 0.14);
-        color: inherit;
-        border: 1px solid rgba(128, 128, 128, 0.3);
+        background: rgba(148, 163, 184, 0.16);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.32);
     }
     .status-strip {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.45rem;
-        margin-bottom: 0.75rem;
+        gap: 0.48rem;
+        margin-bottom: 0.85rem;
     }
     .status-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.24rem 0.7rem;
-        border-radius: 999px;
+        padding: 0.26rem 0.78rem;
+        border-radius: 9999px;
         font-size: 0.80rem;
         font-weight: 600;
-        border: 1px solid rgba(128, 128, 128, 0.28);
-        background: rgba(128, 128, 128, 0.08);
+        color: #e2e8f0;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: rgba(17, 24, 39, 0.85);
+    }
+
+    /* DataFrame rounded container */
+    [data-testid="stDataFrame"] {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            transition: none !important;
+            animation: none !important;
+        }
     }
     </style>
     """,
@@ -377,13 +794,13 @@ def build_combined_csv_bytes(
 # UI Rendering Helpers
 # ---------------------------------------------------------------------------
 
-def render_kpi_card(label: str, value: int, subtitle: str = "", tone: str = "") -> None:
-    tone_cls = f"kpi-{tone}" if tone else ""
+def render_kpi_card(label: str, value: int, subtitle: str = "", tone: str = "info") -> None:
+    tone_cls = f"kpi-{tone}" if tone else "kpi-info"
     st.markdown(
         f"""
         <div class="kpi-card {tone_cls}">
-            <div class="kpi-label">{label}</div>
             <div class="kpi-value">{value:,}</div>
+            <div class="kpi-label">{label}</div>
             <div class="kpi-sub">{subtitle}</div>
         </div>
         """,
@@ -650,207 +1067,226 @@ SHOW_HISTORY_UI = _is_history_ui_enabled()
 # ---------------------------------------------------------------------------
 
 with st.sidebar:
-    st.title("🔍 Site Link Checker")
-    st.caption("Broken Link, Redirect & Soft 404 Inspector")
-
-    st.subheader("1. โหมดการดึงหน้าเว็บ (Scan Mode)")
-    scan_mode_label = st.radio(
-        "เลือกโหมดสแกน",
-        options=[
-            "Auto-Crawl Mode",
-            "Sitemap Mode",
-            "Manual List Mode",
-        ],
-        help=(
-            "- Auto-Crawl: ไต่ตามลิงก์ภายในจากหน้าแรก\n"
-            "- Sitemap: ดึงรายชื่อหน้าจาก sitemap.xml\n"
-            "- Manual List: วาง URL เฉพาะหน้าที่ต้องการตรวจทีละบรรทัด"
-        ),
+    st.markdown(
+        """
+        <div class="ev-brand">
+            <div class="ev-brand-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+            </div>
+            <div>
+                <div class="ev-brand-title">Site Link Checker</div>
+                <div class="ev-brand-sub">Audit Workspace</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    target_url = ""
-    manual_urls_text = ""
+    with st.container(border=True):
+        st.markdown('<div class="ev-card-title">1. Scan Mode</div>', unsafe_allow_html=True)
+        mode_pill = st.segmented_control(
+            "เลือกโหมดสแกน",
+            options=["Auto-Crawl", "Sitemap", "Manual List"],
+            default="Auto-Crawl",
+            label_visibility="collapsed",
+            help=(
+                "- Auto-Crawl: ไต่ตามลิงก์ภายในจากหน้าแรก\n"
+                "- Sitemap: ดึงรายชื่อหน้าจาก sitemap.xml\n"
+                "- Manual List: วาง URL เฉพาะหน้าที่ต้องการตรวจทีละบรรทัด"
+            ),
+        ) or "Auto-Crawl"
+        _mode_to_label = {
+            "Auto-Crawl": "Auto-Crawl Mode",
+            "Sitemap": "Sitemap Mode",
+            "Manual List": "Manual List Mode",
+        }
+        scan_mode_label = _mode_to_label[mode_pill]
 
-    if scan_mode_label == "Auto-Crawl Mode":
-        target_url = st.text_input(
-            "URL หน้าแรก (Start URL)",
-            placeholder="https://example.com",
-            help="ไต่เฉพาะ Hostname ที่ตรงกันเป๊ะ (Subdomain อื่นจะถูกแยกเป็น External Link)",
-        )
-    elif scan_mode_label == "Sitemap Mode":
-        target_url = st.text_input(
-            "URL ของ Sitemap หรือเว็บไซต์",
-            placeholder="https://example.com/sitemap.xml หรือ https://example.com",
-            help="หากกรอกเฉพาะชื่อเว็บ ระบบจะค้นหา /sitemap.xml และ robots.txt ให้อัตโนมัติ",
-        )
-    else:
-        manual_urls_text = st.text_area(
-            "รายการ URL (1 บรรทัดต่อ 1 URL)",
-            height=140,
-            placeholder="https://example.com/\nhttps://example.com/rooms\nhttps://example.com/promo",
-        )
+        target_url = ""
+        manual_urls_text = ""
 
-    st.divider()
-    st.subheader("2. ขอบเขตการสแกน & ความปลอดภัย")
-
-    max_depth = st.slider(
-        "Max Depth (ระดับความลึกในการไต่)",
-        min_value=0,
-        max_value=10,
-        value=3,
-        disabled=(scan_mode_label != "Auto-Crawl Mode"),
-        help="ใช้ในโหมด Auto-Crawl (0 = ตรวจเฉพาะหน้าแรก, 3 = ไต่ลึก 3 ชั้น)",
-    )
-
-    max_pages = st.slider(
-        "Max Pages (จำนวนหน้าสูงสุด)",
-        min_value=1,
-        max_value=1000,
-        value=150,
-        step=5,
-        help="จำกัดจำนวนหน้าสูงสุดที่สแกนเพื่อป้องกันการรันนานเกินไป",
-    )
-
-    check_external = st.checkbox(
-        "ตรวจสอบ External Links ด้วย",
-        value=True,
-        help="ตรวจสอบสถานะปลายทางของลิงก์นอกโดเมนและ Subdomain อื่น (เช่น shop.*, booking.*) โดยไม่ไต่ต่อเข้าไป",
-    )
-
-    ignore_social_media = st.checkbox(
-        "ข้ามลิงก์ Social Media (Ignore Social Media)",
-        value=True,
-        help=(
-            "ข้ามแพลตฟอร์ม Social Media เช่น Facebook, Instagram, TikTok, X/Twitter, LINE, "
-            "LinkedIn, YouTube, WhatsApp, Telegram เพื่อลด False Positive จากระบบกัน Bot (เช่น 400 / 403)"
-        ),
-    )
-
-    ignored_domains_text = ", ".join(sorted(DEFAULT_SOCIAL_MEDIA_DOMAINS))
-    if ignore_social_media:
-        with st.expander("🌐 รายชื่อโดเมน Social Media ที่ข้าม"):
-            ignored_domains_text = st.text_area(
-                "โดเมนที่ข้าม (คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่)",
-                value=ignored_domains_text,
-                height=110,
-                help="ระบบจะข้ามทั้งโดเมนหลักและ Subdomain ของโดเมนเหล่านี้โดยอัตโนมัติ",
+        if scan_mode_label == "Auto-Crawl Mode":
+            target_url = st.text_input(
+                "URL หน้าแรก (Start URL)",
+                placeholder="https://example.com",
+                help="ไต่เฉพาะ Hostname ที่ตรงกันเป๊ะ (Subdomain อื่นจะถูกแยกเป็น External Link)",
+            )
+        elif scan_mode_label == "Sitemap Mode":
+            target_url = st.text_input(
+                "URL ของ Sitemap หรือเว็บไซต์",
+                placeholder="https://example.com/sitemap.xml หรือ https://example.com",
+                help="หากกรอกเฉพาะชื่อเว็บ ระบบจะค้นหา /sitemap.xml และ robots.txt ให้อัตโนมัติ",
+            )
+        else:
+            manual_urls_text = st.text_area(
+                "รายการ URL (1 บรรทัดต่อ 1 URL)",
+                height=130,
+                placeholder="https://example.com/\nhttps://example.com/rooms\nhttps://example.com/promo",
             )
 
-    capture_404_highlights = st.checkbox(
-        "แคปภาพ + วง/Highlight ปุ่มที่เสีย (เฉพาะ 404 เท่านั้น)",
-        value=True,
-        help=(
-            "เมื่อพบลิงก์ 404 Not Found ระบบจะเปิดหน้าต้นทางด้วย Playwright เพื่อวง/Highlight "
-            "ปุ่มหรือลิงก์ที่มีปัญหาพร้อมแคป Screenshot (ทำงานเฉพาะเคส 404 เท่านั้น)"
-        ),
-    )
+    with st.container(border=True):
+        st.markdown('<div class="ev-card-title">2. Scope &amp; Safety</div>', unsafe_allow_html=True)
 
-    screencap_404_device = "Desktop"
-    max_404_screenshots = 30
-    if capture_404_highlights:
-        with st.expander("📸 ตั้งค่าการแคปภาพ 404 Highlight"):
-            screencap_404_device = st.selectbox(
-                "ขนาดหน้าจอสำหรับแคปปุ่ม 404",
-                options=["Desktop", "Mobile (iPhone 14)"],
-                index=0,
-                help="แนะนำ Desktop เพื่อให้เห็นปุ่มบนแถบเมนูหลักได้ครบโดยไม่ถูกซ่อนใน Mobile Menu",
-            )
-            max_404_screenshots = st.slider(
-                "จำนวนภาพ 404 สูงสุดต่อการสแกน",
-                min_value=5,
-                max_value=100,
-                value=30,
-                step=5,
-            )
-
-    st.divider()
-    st.subheader("3. Deep Check (Playwright)")
-
-    enable_deep_check = st.checkbox(
-        "เปิดใช้งาน Deep Check (ตรวจหน้าขาว / Soft 404)",
-        value=False,
-        help="เปิดหน้าเว็บจริงด้วย Headless Chromium เพื่อรอ JavaScript ทำงานและจับหน้าขาว/Soft 404 พร้อมแคปภาพหน้าจอ",
-    )
-
-    device_profile = "Mobile (iPhone 14)"
-    button_keywords_raw = ", ".join(DEFAULT_BUTTON_KEYWORDS)
-    manual_deep_scope = "all_manual"
-    soft_404_keywords_raw = "\n".join(DEFAULT_SOFT_404_KEYWORDS)
-    simulate_ad_params = False
-    ad_params_input = DEFAULT_AD_PARAMS
-    max_deep_targets = 30
-    extra_wait_sec = 2.5
-
-    if enable_deep_check:
-        device_profile = st.selectbox(
-            "Device Profile (Deep Check)",
-            options=list(DEVICE_PROFILES.keys()),
-            index=0,
-            help="เลือกจำลองหน้าจอและ User-Agent แบบ Mobile (iPhone 14) หรือ Desktop",
+        max_depth = st.slider(
+            "Max Depth (ระดับความลึกในการไต่)",
+            min_value=0,
+            max_value=10,
+            value=3,
+            disabled=(scan_mode_label != "Auto-Crawl Mode"),
+            help="ใช้ในโหมด Auto-Crawl (0 = ตรวจเฉพาะหน้าแรก, 3 = ไต่ลึก 3 ชั้น)",
         )
 
-        if scan_mode_label == "Manual List Mode":
-            manual_scope_label = st.radio(
-                "ขอบเขต Deep Check (Manual List)",
-                options=[
-                    "ตรวจทุก URL ใน Manual List",
-                    "เฉพาะปุ่ม/ลิงก์ที่ตรงกับ Button Keyword",
-                    "ทั้งสองอย่าง (ทุก URL + ปุ่มที่ตรง Keyword)",
-                ],
-                index=0,
-            )
-            manual_scope_map = {
-                "ตรวจทุก URL ใน Manual List": "all_manual",
-                "เฉพาะปุ่ม/ลิงก์ที่ตรงกับ Button Keyword": "keywords_only",
-                "ทั้งสองอย่าง (ทุก URL + ปุ่มที่ตรง Keyword)": "both",
-            }
-            manual_deep_scope = manual_scope_map[manual_scope_label]
-
-        button_keywords_raw = st.text_input(
-            "Button Keyword Filter (คั่นด้วยจุลภาค)",
-            value=", ".join(DEFAULT_BUTTON_KEYWORDS),
-            help="Deep Check จะเลือกรันเฉพาะลิงก์ที่ Anchor Text มีคำเหล่านี้ (ไม่สนตัวพิมพ์เล็ก-ใหญ่)",
-            disabled=(scan_mode_label == "Manual List Mode" and manual_deep_scope == "all_manual"),
+        max_pages = st.slider(
+            "Max Pages (จำนวนหน้าสูงสุด)",
+            min_value=1,
+            max_value=1000,
+            value=150,
+            step=5,
+            help="จำกัดจำนวนหน้าสูงสุดที่สแกนเพื่อป้องกันการรันนานเกินไป",
         )
 
-        simulate_ad_params = st.checkbox(
-            "จำลองพารามิเตอร์โฆษณา (?gclid=...&utm_...)",
+        check_external = st.toggle(
+            "ตรวจสอบ External Links",
+            value=True,
+            help="ตรวจสอบสถานะปลายทางของลิงก์นอกโดเมนและ Subdomain อื่น (เช่น shop.*, booking.*) โดยไม่ไต่ต่อเข้าไป",
+        )
+
+        ignore_social_media = st.toggle(
+            "ข้ามลิงก์ Social Media",
+            value=True,
+            help=(
+                "ข้ามแพลตฟอร์ม Social Media เช่น Facebook, Instagram, TikTok, X/Twitter, LINE, "
+                "LinkedIn, YouTube, WhatsApp, Telegram เพื่อลด False Positive จากระบบกัน Bot (เช่น 400 / 403)"
+            ),
+        )
+
+        ignored_domains_text = ", ".join(sorted(DEFAULT_SOCIAL_MEDIA_DOMAINS))
+        if ignore_social_media:
+            with st.expander("รายชื่อโดเมน Social Media ที่ข้าม"):
+                ignored_domains_text = st.text_area(
+                    "โดเมนที่ข้าม (คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่)",
+                    value=ignored_domains_text,
+                    height=110,
+                    help="ระบบจะข้ามทั้งโดเมนหลักและ Subdomain ของโดเมนเหล่านี้โดยอัตโนมัติ",
+                )
+
+        capture_404_highlights = st.toggle(
+            "แคปภาพ Highlight ปุ่มเสีย (404)",
+            value=True,
+            help=(
+                "เมื่อพบลิงก์ 404 Not Found ระบบจะเปิดหน้าต้นทางเพื่อวง/Highlight "
+                "ปุ่มหรือลิงก์ที่มีปัญหาพร้อมแคป Screenshot (ทำงานเฉพาะเคส 404 เท่านั้น)"
+            ),
+        )
+
+        screencap_404_device = "Desktop"
+        max_404_screenshots = 30
+        if capture_404_highlights:
+            with st.expander("ตั้งค่าการแคปภาพ 404 Highlight"):
+                screencap_404_device = st.selectbox(
+                    "ขนาดหน้าจอสำหรับแคปปุ่ม 404",
+                    options=["Desktop", "Mobile (iPhone 14)"],
+                    index=0,
+                    help="แนะนำ Desktop เพื่อให้เห็นปุ่มบนแถบเมนูหลักได้ครบโดยไม่ถูกซ่อนใน Mobile Menu",
+                )
+                max_404_screenshots = st.slider(
+                    "จำนวนภาพ 404 สูงสุดต่อการสแกน",
+                    min_value=5,
+                    max_value=100,
+                    value=30,
+                    step=5,
+                )
+
+    with st.container(border=True):
+        st.markdown('<div class="ev-card-title">3. Deep Check</div>', unsafe_allow_html=True)
+
+        enable_deep_check = st.toggle(
+            "เปิดใช้งาน Deep Check (หน้าขาว / Soft 404)",
             value=False,
-            help="แนบพารามิเตอร์โฆษณาเข้าหน้าต้นทาง แล้วให้ Playwright คลิกปุ่มปลายทางจริงเพื่อตรวจว่าระบบปลายทางค้างขาวหรือขึ้น Error หรือไม่",
+            help="เปิดหน้าเว็บจริงด้วย Headless Browser เพื่อรอ JavaScript ทำงานและจับหน้าขาว/Soft 404 พร้อมแคปภาพหน้าจอ",
         )
 
-        if simulate_ad_params:
-            ad_params_input = st.text_input(
-                "พารามิเตอร์โฆษณาทดสอบ",
-                value=DEFAULT_AD_PARAMS,
-                help="Query string ที่จะแนบเข้า URL ทดสอบ (ไม่ต้องใส่เครื่องหมาย ? นำหน้าก็ได้)",
+        device_profile = "Mobile (iPhone 14)"
+        button_keywords_raw = ", ".join(DEFAULT_BUTTON_KEYWORDS)
+        manual_deep_scope = "all_manual"
+        soft_404_keywords_raw = "\n".join(DEFAULT_SOFT_404_KEYWORDS)
+        simulate_ad_params = False
+        ad_params_input = DEFAULT_AD_PARAMS
+        max_deep_targets = 30
+        extra_wait_sec = 2.5
+
+        if enable_deep_check:
+            device_profile = st.selectbox(
+                "Device Profile",
+                options=list(DEVICE_PROFILES.keys()),
+                index=0,
+                help="เลือกจำลองหน้าจอและ User-Agent แบบ Mobile (iPhone 14) หรือ Desktop",
             )
 
-        with st.expander("⚙️ ตั้งค่าคำคีย์เวิร์ด Soft 404 & ตัวเลือกขั้นสูง"):
-            soft_404_keywords_raw = st.text_area(
-                "คำคีย์เวิร์ด Soft 404 (1 คำต่อ 1 บรรทัด)",
-                value="\n".join(DEFAULT_SOFT_404_KEYWORDS),
-                height=140,
-                help="สามารถเพิ่มหรือแก้ไขข้อความ Error ที่ต้องการให้ระบบตรวจจับได้อิสระ",
-            )
-            max_deep_targets = st.slider(
-                "จำนวน URL สูงสุดสำหรับ Deep Check",
-                min_value=1,
-                max_value=200,
-                value=30,
-                help="จำกัดจำนวนหน้าที่จะเปิดด้วย Headless Browser เพื่อคุมเวลาการทำงาน",
-            )
-            extra_wait_sec = st.slider(
-                "รอเพิ่มหลังหน้าโหลดเสร็จ (วินาที)",
-                min_value=1.0,
-                max_value=6.0,
-                value=2.5,
-                step=0.5,
-                help="เผื่อเวลาสำหรับ Loading Spinner หรือ SPA JavaScript เรนเดอร์ให้เสร็จ",
+            if scan_mode_label == "Manual List Mode":
+                manual_scope_label = st.radio(
+                    "ขอบเขต Deep Check (Manual List)",
+                    options=[
+                        "ตรวจทุก URL ใน Manual List",
+                        "เฉพาะปุ่ม/ลิงก์ที่ตรงกับ Button Keyword",
+                        "ทั้งสองอย่าง (ทุก URL + ปุ่มที่ตรง Keyword)",
+                    ],
+                    index=0,
+                )
+                manual_scope_map = {
+                    "ตรวจทุก URL ใน Manual List": "all_manual",
+                    "เฉพาะปุ่ม/ลิงก์ที่ตรงกับ Button Keyword": "keywords_only",
+                    "ทั้งสองอย่าง (ทุก URL + ปุ่มที่ตรง Keyword)": "both",
+                }
+                manual_deep_scope = manual_scope_map[manual_scope_label]
+
+            button_keywords_raw = st.text_input(
+                "Button Keyword Filter (คั่นด้วยจุลภาค)",
+                value=", ".join(DEFAULT_BUTTON_KEYWORDS),
+                help="Deep Check จะเลือกรันเฉพาะลิงก์ที่ Anchor Text มีคำเหล่านี้ (ไม่สนตัวพิมพ์เล็ก-ใหญ่)",
+                disabled=(scan_mode_label == "Manual List Mode" and manual_deep_scope == "all_manual"),
             )
 
-    st.divider()
-    start_scan = st.button("🚀 Start Scan", type="primary", width="stretch")
+            simulate_ad_params = st.toggle(
+                "จำลองพารามิเตอร์โฆษณา (?gclid=...&utm_...)",
+                value=False,
+                help="แนบพารามิเตอร์โฆษณาเข้าหน้าต้นทาง แล้วจำลองการคลิกปุ่มปลายทางจริงเพื่อตรวจว่าระบบปลายทางค้างขาวหรือขึ้น Error หรือไม่",
+            )
+
+            if simulate_ad_params:
+                ad_params_input = st.text_input(
+                    "พารามิเตอร์โฆษณาทดสอบ",
+                    value=DEFAULT_AD_PARAMS,
+                    help="Query string ที่จะแนบเข้า URL ทดสอบ (ไม่ต้องใส่เครื่องหมาย ? นำหน้าก็ได้)",
+                )
+
+            with st.expander("ตั้งค่าคำคีย์เวิร์ด Soft 404 & ขั้นสูง"):
+                soft_404_keywords_raw = st.text_area(
+                    "คำคีย์เวิร์ด Soft 404 (1 คำต่อ 1 บรรทัด)",
+                    value="\n".join(DEFAULT_SOFT_404_KEYWORDS),
+                    height=140,
+                    help="สามารถเพิ่มหรือแก้ไขข้อความ Error ที่ต้องการให้ระบบตรวจจับได้อิสระ",
+                )
+                max_deep_targets = st.slider(
+                    "จำนวน URL สูงสุดสำหรับ Deep Check",
+                    min_value=1,
+                    max_value=200,
+                    value=30,
+                    help="จำกัดจำนวนหน้าที่จะเปิดด้วย Headless Browser เพื่อคุมเวลาการทำงาน",
+                )
+                extra_wait_sec = st.slider(
+                    "รอเพิ่มหลังหน้าโหลดเสร็จ (วินาที)",
+                    min_value=1.0,
+                    max_value=6.0,
+                    value=2.5,
+                    step=0.5,
+                    help="เผื่อเวลาสำหรับ Loading Spinner หรือ SPA JavaScript เรนเดอร์ให้เสร็จ",
+                )
+
+    start_scan = st.button("Start Scan  →", type="primary", width="stretch")
     if SHOW_HISTORY_UI:
         _sidebar_storage = get_storage_backend_info()
         if _sidebar_storage["is_cloud_persistent"]:
@@ -863,11 +1299,42 @@ with st.sidebar:
 # Main Header & Scan Execution
 # ---------------------------------------------------------------------------
 
-st.title("🔍 Broken Link, Redirect & Soft 404 Checker")
-st.caption(
-    "ตรวจสอบลิงก์เสีย แยกสถานะชัดเจนและกรองผลลัพธ์ได้ ข้าม Social Media อัตโนมัติ "
-    "พร้อม Highlight วงจุดที่มีปัญหาสำหรับ 404 และตรวจหน้าขาว/Soft 404 ด้วย Playwright"
-)
+_existing_report = st.session_state.get("scan_report")
+if _existing_report and not start_scan:
+    _rep_summary: CrawlSummary = _existing_report["summary"]
+    _host_pill = f" · Strict Hostname: {_rep_summary.target_hostname}" if _rep_summary.target_hostname else ""
+    st.markdown(
+        f"""
+        <div class="ev-hero">
+            <div class="ev-status-pill">
+                <span class="ev-dot ev-dot-ok"></span>
+                <span>Scan Completed · {_existing_report['timestamp']} (UTC+7){_host_pill}</span>
+            </div>
+            <h1 class="ev-hero-title">Site Audit <span class="ev-grad-text">Overview</span></h1>
+            <p class="ev-hero-sub">
+                สรุปผลตรวจสอบลิงก์เสีย Redirect และ Deep Check แยกหมวดหมู่สถานะพร้อมหลักฐานภาพหน้าจอ 404 Highlight
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        """
+        <div class="ev-hero">
+            <div class="ev-status-pill">
+                <span class="ev-dot ev-dot-rose"></span>
+                <span>Fast Broken Link, Redirect &amp; Soft 404 Inspector</span>
+            </div>
+            <h1 class="ev-hero-title">Broken Link, Redirect &amp; <span class="ev-grad-text">Soft 404 Checker</span></h1>
+            <p class="ev-hero-sub">
+                ตรวจสอบลิงก์เสีย แยกสถานะชัดเจนพร้อมตัวกรอง ข้าม Social Media อัตโนมัติ
+                แคปภาพ Highlight ปุ่มที่มีปัญหาเฉพาะ 404 และตรวจจับหน้าขาว / Soft 404 ในคลิกเดียว
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 if start_scan:
     if scan_mode_label in ("Auto-Crawl Mode", "Sitemap Mode") and not target_url.strip():
@@ -1027,7 +1494,9 @@ if start_scan:
                 "warnings": scan_warnings,
                 "log_status": (log_ok, log_backend, log_msg),
             }
+            _scan_succeeded = True
         except Exception as exc:
+            _scan_succeeded = False
             progress_bar.empty()
             status_box.error(f"เกิดข้อผิดพลาดระหว่างการสแกน: {exc}")
             err_entry = ScanLogEntry(
@@ -1043,6 +1512,8 @@ if start_scan:
             if not err_ok:
                 logger.warning("Error scan history log failed (%s): %s", err_backend, err_msg)
             st.session_state.pop("scan_history_cache", None)
+        if _scan_succeeded:
+            st.rerun()
 
 
 # ---------------------------------------------------------------------------
@@ -1052,30 +1523,77 @@ if start_scan:
 report = st.session_state.get("scan_report")
 
 if not report:
-    st.info(
-        "👈 ตั้งค่าโหมดการสแกนและกรอก URL ทางแถบด้านซ้าย จากนั้นกด **Start Scan** เพื่อเริ่มตรวจสอบเว็บไซต์"
+    st.markdown(
+        """
+        <div class="ev-cta-hint">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            <span>ตั้งค่าโหมดการสแกนและกรอก URL ทางแถบควบคุมด้านซ้าย จากนั้นกด <strong>Start Scan →</strong> เพื่อเริ่มตรวจสอบเว็บไซต์</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     col_a, col_b, col_c = st.columns(3)
     with col_a:
-        st.markdown("#### 1️⃣ Multi-Mode & Clean Scope")
         st.markdown(
-            "- **Auto-Crawl / Sitemap / Manual List** รองรับครบ 3 โหมด\n"
-            "- **Strict Hostname:** แยก Subdomain เป็น External Link\n"
-            "- **Ignore Social Media:** ข้าม Facebook, IG, TikTok, X, LINE ลด False Positive"
+            """
+            <div class="ev-feature-card">
+                <div class="ev-feature-icon ev-fi-violet">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <div class="ev-feature-title">1. Multi-Mode &amp; Clean Scope</div>
+                <ul class="ev-feature-list">
+                    <li><strong>Auto-Crawl / Sitemap / Manual List</strong> รองรับครบ 3 โหมด</li>
+                    <li><strong>Strict Hostname:</strong> แยก Subdomain เป็น External Link อัตโนมัติ</li>
+                    <li><strong>Ignore Social Media:</strong> ข้าม Facebook, IG, TikTok, X, LINE ลด False Positive</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     with col_b:
-        st.markdown("#### 2️⃣ Status Separation & 404 Highlight")
         st.markdown(
-            "- แยกกลุ่มสถานะชัดเจน (`404 Not Found`, `5xx`, `Timeout`, `Blocked 403/429`, `301/302`) พร้อม Filter\n"
-            "- แคปภาพพร้อม **วง/Highlight ปุ่มที่เสีย** บนหน้าต้นทาง **เฉพาะ 404 เท่านั้น**"
+            """
+            <div class="ev-feature-card">
+                <div class="ev-feature-icon ev-fi-rose">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="ev-feature-title">2. Status Separation &amp; 404 Highlight</div>
+                <ul class="ev-feature-list">
+                    <li>แยกกลุ่มสถานะชัดเจน (<code>404</code>, <code>5xx</code>, <code>Timeout</code>, <code>403/429</code>, <code>301/302</code>) พร้อมตัวกรอง</li>
+                    <li>แคปภาพพร้อม <strong>วง/Highlight ปุ่มที่เสีย</strong> บนหน้าต้นทาง <strong>เฉพาะ 404 เท่านั้น</strong></li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     with col_c:
-        st.markdown("#### 3️⃣ Playwright Deep Check")
         st.markdown(
-            "- จำลอง **Mobile (iPhone 14)** หรือ **Desktop** พร้อมรอ JS โหลดเสร็จ\n"
-            "- จับ **Soft 404** (Highlight ทั้งปุ่มต้นทาง + จุด Error ปลายทาง) และ **Blank Page**\n"
-            "- จำลองคลิกปุ่มจริงพร้อม `?gclid=...&utm_...` และ Export Excel/CSV"
+            """
+            <div class="ev-feature-card">
+                <div class="ev-feature-icon ev-fi-indigo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </svg>
+                </div>
+                <div class="ev-feature-title">3. Deep Check &amp; Ad Simulation</div>
+                <ul class="ev-feature-list">
+                    <li>จำลอง <strong>Mobile (iPhone 14)</strong> หรือ <strong>Desktop</strong> พร้อมรอ JS เรนเดอร์เสร็จ</li>
+                    <li>จับ <strong>Soft 404</strong> (Highlight ต้นทาง + จุด Error ปลายทาง) และ <strong>Blank Page</strong></li>
+                    <li>จำลองคลิกปุ่มจริงพร้อม <code>?gclid=...&amp;utm_...</code> และ Export Excel / CSV</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
     if SHOW_HISTORY_UI:
@@ -1091,11 +1609,6 @@ else:
     redirect_df = build_redirect_df(summary)
     deep_issues_df = build_deep_issues_df(deep_results)
     deep_issues_list = [r for r in deep_results if r.status == "Issue"]
-
-    st.caption(
-        f"สแกนล่าสุดเมื่อ: **{report['timestamp']} (เวลาไทย UTC+7)** | โหมด: **{summary.scan_mode}**"
-        + (f" | Strict Hostname: `{summary.target_hostname}`" if summary.target_hostname else "")
-    )
 
     if SHOW_HISTORY_UI:
         log_status = report.get("log_status")
@@ -1141,24 +1654,24 @@ else:
     # KPI Summary Cards
     k1, k2, k3, k4, k5 = st.columns(5)
     with k1:
-        render_kpi_card("หน้าที่สแกน", summary.pages_scanned, "Pages Scanned")
+        render_kpi_card("Pages Scanned", summary.pages_scanned, "หน้าที่สแกนทั้งหมด", tone="info")
     with k2:
         total_sub = (
             f"ข้าม Social: {summary.skipped_social_count:,}"
             if summary.skipped_social_count > 0
-            else "Total Links Checked"
+            else "ลิงก์ที่ตรวจทั้งหมด"
         )
-        render_kpi_card("ลิงก์ที่ตรวจทั้งหมด", summary.total_links_checked, total_sub)
+        render_kpi_card("Total Links", summary.total_links_checked, total_sub, tone="info")
     with k3:
         render_kpi_card(
-            "Broken / Error Links",
+            "Broken / Error",
             len(broken_df),
             broken_sub,
             tone="danger" if len(broken_df) > 0 else "ok",
         )
     with k4:
         render_kpi_card(
-            "Redirected Links",
+            "Redirected",
             len(redirect_df),
             redirect_sub,
             tone="warn" if len(redirect_df) > 0 else "ok",
@@ -1178,10 +1691,11 @@ else:
     excel_bytes = build_excel_bytes(broken_df, redirect_df, deep_issues_df)
     combined_csv_bytes = build_combined_csv_bytes(broken_df, redirect_df, deep_issues_df)
 
-    exp_col1, exp_col2, exp_col3, exp_col4, exp_col5 = st.columns([1.4, 1.3, 1.1, 1.1, 1.1])
+    st.markdown('<div class="ev-toolbar-label">Export Toolbar</div>', unsafe_allow_html=True)
+    exp_col1, exp_col2, exp_col3, exp_col4, exp_col5 = st.columns([1.45, 1.3, 1.05, 1.1, 1.1])
     with exp_col1:
         st.download_button(
-            label="📊 Export Excel (.xlsx — 3 Sheets)",
+            label="Export Excel (.xlsx — 3 Sheets)",
             data=excel_bytes,
             file_name=f"site_audit_report_{ts_slug}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1190,7 +1704,7 @@ else:
         )
     with exp_col2:
         st.download_button(
-            label="📄 Export All Issues (.csv)",
+            label="Export All Issues (.csv)",
             data=combined_csv_bytes,
             file_name=f"site_audit_all_issues_{ts_slug}.csv",
             mime="text/csv",
@@ -1198,7 +1712,7 @@ else:
         )
     with exp_col3:
         st.download_button(
-            label="⬇️ Broken CSV",
+            label="Broken CSV",
             data=broken_df.to_csv(index=False).encode("utf-8-sig"),
             file_name=f"broken_links_{ts_slug}.csv",
             mime="text/csv",
@@ -1206,7 +1720,7 @@ else:
         )
     with exp_col4:
         st.download_button(
-            label="⬇️ Redirects CSV",
+            label="Redirects CSV",
             data=redirect_df.to_csv(index=False).encode("utf-8-sig"),
             file_name=f"redirected_links_{ts_slug}.csv",
             mime="text/csv",
@@ -1214,7 +1728,7 @@ else:
         )
     with exp_col5:
         st.download_button(
-            label="⬇️ Deep Check CSV",
+            label="Deep Check CSV",
             data=deep_issues_df.to_csv(index=False).encode("utf-8-sig"),
             file_name=f"deep_check_issues_{ts_slug}.csv",
             mime="text/csv",
@@ -1225,12 +1739,12 @@ else:
 
     # Report Tabs (Scan History tab is hidden from regular users by default)
     report_tab_labels = [
-        f"❌ Broken / Error Links ({len(broken_df)})",
-        f"↪️ Redirected Links ({len(redirect_df)})",
-        f"🕵️ Deep Check Issues ({len(deep_issues_df)})",
+        f"Broken / Error Links ({len(broken_df)})",
+        f"Redirected Links ({len(redirect_df)})",
+        f"Deep Check Issues ({len(deep_issues_df)})",
     ]
     if SHOW_HISTORY_UI:
-        report_tab_labels.append("🕒 ประวัติการสแกน (Scan History)")
+        report_tab_labels.append("Scan History")
         tab1, tab2, tab3, tab4 = st.tabs(report_tab_labels)
     else:
         tab1, tab2, tab3 = st.tabs(report_tab_labels)
@@ -1388,8 +1902,8 @@ else:
     with tab3:
         if not deep_enabled:
             st.info(
-                "ℹ️ ยังไม่ได้เปิดใช้งาน **Deep Check (Playwright)** ในการสแกนรอบนี้ "
-                "— สามารถติ๊กเปิดที่แถบด้านซ้ายเพื่อตรวจหาหน้าขาว (Blank Page), Soft 404 และจำลองคลิกโฆษณา"
+                "ℹ️ ยังไม่ได้เปิดใช้งาน **Deep Check** ในการสแกนรอบนี้ "
+                "— สามารถเปิดสวิตช์ **Deep Check** ที่แถบด้านซ้ายเพื่อตรวจหาหน้าขาว (Blank Page), Soft 404 และจำลองคลิกโฆษณา"
             )
         elif not deep_results:
             st.warning(
