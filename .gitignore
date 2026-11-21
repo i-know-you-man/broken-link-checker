@@ -1,0 +1,20 @@
+# Python bytecode & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Runtime generated 404 / Deep Check screenshots
+screenshots/
+*.png
+
+# Local Streamlit secrets (never commit passwords or API keys)
+.streamlit/secrets.toml
+
+# OS & editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
