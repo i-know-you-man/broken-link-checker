@@ -33,9 +33,10 @@
    - **Ad Parameter Simulation:** แนบพารามิเตอร์ทดสอบ (เช่น `?gclid=test_gclid_123&utm_source=google&utm_medium=cpc`) เข้าหน้าต้นทาง แล้วจำลองการคลิกปุ่มปลายทางจริงด้วย Playwright เพื่อตรวจจับเคสที่ระบบจอง/หน้าปลายทางพังหรือค้างขาวเมื่อมาจากโฆษณา
    - **Screenshot Capture (Highlight เฉพาะ 404):** สำหรับ `Soft 404` และ `HTTP 404` ระบบจะแคปภาพทั้งหน้าต้นทาง (วงปุ่มที่มีปัญหา) และหน้าปลายทาง (วงข้อความ Error) ส่วน `Blank Page` จะแคปภาพหน้าจอปกติเก็บไว้ในโฟลเดอร์ `screenshots/`
 
-### 4. รายงาน & Export
+### 4. รายงาน, ประวัติการสแกน (Timestamp) & Export
 - KPI Summary Cards แสดงยอดสรุปครบทุกหมวด
-- แยกแท็บรายงาน 3 แท็บ (`Broken Links`, `Redirected Links`, `Deep Check Issues`) พร้อมตัวกรองค้นหาและภาพ Screenshot
+- แยกแท็บรายงาน 4 แท็บ (`Broken Links`, `Redirected Links`, `Deep Check Issues`, `Scan History`) พร้อมตัวกรองค้นหาและภาพ Screenshot
+- **ระบบบันทึก Timestamp & ประวัติเว็บไซต์ที่ตรวจ (เวลาประเทศไทย UTC+7):** บันทึกอัตโนมัติทุกครั้งที่กด Start Scan รองรับทั้ง **Google Sheets** (เก็บถาวรบน Cloud) และไฟล์สำรอง `scan_history.csv` พร้อมปุ่มทดสอบการเชื่อมต่อและดาวน์โหลดประวัติ
 - ปุ่มดาวน์โหลด **Excel (.xlsx)** แยก 3 ชีต (`Broken_Links`, `Redirected_Links`, `Deep_Check_Issues`) และไฟล์ **CSV** (รองรับภาษาไทยใน Excel ด้วย UTF-8-SIG)
 
 ---
@@ -44,16 +45,19 @@
 
 ```text
 broken-link-checker/
-├── app.py              # หน้าเว็บ Streamlit UI, Dashboard และระบบ Export Excel/CSV
-├── crawler.py          # ระบบ Crawl 3 โหมด, Strict Hostname, URL Dedup และ Fast HTTP Checker
-├── deep_checker.py     # ระบบ Playwright Deep Check, 404 Highlight Screencap และ auto-install Chromium
-├── requirements.txt    # รายการ Python packages ที่ต้องติดตั้ง
-├── packages.txt        # ไลบรารี Debian Linux + ฟอนต์ภาษาไทยสำหรับรัน Chromium บน Streamlit Cloud
+├── app.py                   # หน้าเว็บ Streamlit UI, Dashboard, Scan History และระบบ Export Excel/CSV
+├── crawler.py               # ระบบ Crawl 3 โหมด, Strict Hostname, URL Dedup และ Fast HTTP Checker
+├── deep_checker.py          # ระบบ Playwright Deep Check, 404 Highlight Screencap และ auto-install Chromium
+├── history_logger.py        # ระบบบันทึก Timestamp (เวลาไทย UTC+7) ลง Google Sheets / Local CSV
+├── google_apps_script.gs    # โค้ด Google Apps Script พร้อมคัดลอกไปวางใน Google Sheets
+├── requirements.txt         # รายการ Python packages ที่ต้องติดตั้ง
+├── packages.txt             # ไลบรารี Debian Linux + ฟอนต์ภาษาไทยสำหรับรัน Chromium บน Streamlit Cloud
 ├── .streamlit/
-│   └── config.toml     # การตั้งค่าเซิร์ฟเวอร์ Streamlit
-├── .gitignore          # กันโฟลเดอร์ screenshots/, __pycache__/ และ secrets.toml ออกจาก Git
-├── screenshots/        # โฟลเดอร์เก็บภาพ Screenshot อัตโนมัติเมื่อพบปัญหา
-└── README.md           # คู่มือการติดตั้งและใช้งาน
+│   ├── config.toml          # การตั้งค่าเซิร์ฟเวอร์ Streamlit
+│   └── secrets.toml.example # ตัวอย่างการตั้งค่า Secrets สำหรับ Google Sheets และ APP_PASSWORD
+├── .gitignore               # กันโฟลเดอร์ screenshots/, scan_history.csv, __pycache__/ และ secrets.toml ออกจาก Git
+├── screenshots/             # โฟลเดอร์เก็บภาพ Screenshot อัตโนมัติเมื่อพบปัญหา
+└── README.md                # คู่มือการติดตั้งและใช้งาน
 ```
 
 ---
@@ -129,4 +133,45 @@ streamlit run app.py
      APP_PASSWORD = "ตั้งรหัสผ่านของคุณที่นี่"
      ```
    - กด **Deploy!** เมื่อสร้างเสร็จจะได้ลิงก์ `https://<ชื่อแอปของคุณ>.streamlit.app` สำหรับเปิดใช้งานผ่านเน็ตทันที
+
+---
+
+## 📊 วิธีเชื่อมต่อ Google Sheets เพื่อเก็บ Timestamp & ประวัติการสแกนถาวร
+
+### วิธีที่ 1 (แนะนำ — ง่ายสุด ใช้เวลา 3 นาที ไม่ต้องเปิด Google Cloud)
+1. สร้างไฟล์ **Google Sheets** ใหม่ใน Google Drive ของคุณ (เช่นตั้งชื่อว่า `Broken Link Checker History`)
+2. ไปที่เมนู **ส่วนขยาย (Extensions) -> Apps Script**
+3. ลบโค้ดเดิมออกทั้งหมด แล้วคัดลอกโค้ดทั้งหมดจากไฟล์ `google_apps_script.gs` ไปวาง -> กด **Save** (`Ctrl+S`)
+4. กดปุ่ม **Deploy (ทำให้ใช้งานได้) -> New deployment (การทำให้ใช้งานได้รายการใหม่)**
+   - คลิกไอคอนฟันเฟือง เลือกประเภท **Web app (เว็บแอป)**
+   - **Execute as (ดำเนินการในฐานะ):** `Me (ฉัน)`
+   - **Who has access (ผู้ที่มีสิทธิ์เข้าถึง):** `Anyone (ทุกคน)`
+   - กด **Deploy** -> กดอนุญาตสิทธิ์ (**Authorize access**) -> คัดลอก **Web app URL** (ที่ลงท้ายด้วย `/exec`)
+5. เปิดหน้าแอปของคุณบน **Streamlit Cloud -> ⋮ (มุมขวาล่าง/ขวาบน) -> Settings -> Secrets** แล้ววาง:
+   ```toml
+   GSHEET_WEBHOOK_URL = "https://script.google.com/macros/s/xxxxx/exec"
+   GSHEET_URL = "https://docs.google.com/spreadsheets/d/xxxxx/edit"
+   ```
+   *(ดูตัวอย่างเพิ่มเติมรวมถึงการตั้งรหัสผ่านและวิธี Service Account ได้ใน `.streamlit/secrets.toml.example`)*
+6. กด **Save** แล้วเปิดแอป กดปุ่ม **🔌 ทดสอบการเชื่อมต่อ Google Sheets** ในส่วนประวัติการสแกน
+
+### วิธีที่ 2 (ทางเลือก — Google Cloud Service Account)
+หากต้องการใช้ Google Service Account (`gspread`) ให้เปิดใช้งาน **Google Sheets API** ใน Google Cloud Console สร้าง Service Account Key (JSON), แชร์ Google Sheet ให้กับ `client_email` เป็นสิทธิ์ **Editor**, แล้ววาง `[gcp_service_account]` และ `GSHEET_URL` ใน Streamlit Secrets ตามตัวอย่างใน `.streamlit/secrets.toml.example`
+
+---
+
+## 🔄 วิธีอัปเดตโค้ดขึ้น GitHub (และอัปเดตเว็บออนไลน์อัตโนมัติ)
+
+ทุกครั้งที่มีการแก้ไขหรือเพิ่มฟีเจอร์ใหม่ ให้เปิด **Command Prompt / PowerShell** แล้วรันคำสั่งต่อไปนี้:
+
+```powershell
+cd C:\Users\airo_\.gemini\antigravity\scratch\broken-link-checker
+git status
+git add .
+git commit -m "Add scan history timestamp and Google Sheets sync"
+git push origin main
+```
+
+เมื่อ `git push` สำเร็จ **Streamlit Cloud จะดึงโค้ดใหม่ไปอัปเดตหน้าเว็บออนไลน์ให้อัตโนมัติ** (หากมีการเพิ่มไลบรารีใหม่ใน `requirements.txt` จะใช้เวลาติดตั้งประมาณ 1–2 นาที)
+
 

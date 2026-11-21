@@ -9,7 +9,6 @@ import hmac
 import io
 import os
 from collections import Counter
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -36,6 +35,17 @@ from deep_checker import (
     parse_keywords,
     run_deep_check,
     select_deep_check_targets,
+)
+from history_logger import (
+    ScanLogEntry,
+    extract_fallback_hostname,
+    format_target_input,
+    get_storage_backend_info,
+    load_scan_history,
+    now_thailand_slug,
+    now_thailand_str,
+    record_scan_history,
+    test_gsheets_connection,
 )
 
 SCREENSHOT_DIR = Path(__file__).resolve().parent / "screenshots"
@@ -454,6 +464,127 @@ def _deep_issue_matches_filters(
     return True
 
 
+def _get_cached_scan_history(
+    force_refresh: bool = False,
+) -> tuple[pd.DataFrame, dict, str | None]:
+    """Load scan history once per session unless refreshed or invalidated by a new scan."""
+    if force_refresh or "scan_history_cache" not in st.session_state:
+        st.session_state["scan_history_cache"] = load_scan_history(limit=300)
+    return st.session_state["scan_history_cache"]
+
+
+def render_scan_history_panel(key_prefix: str = "hist") -> None:
+    """Render the Timestamp & Scan History panel (Google Sheets or Local CSV)."""
+    st.subheader("🕒 ประวัติการตรวจสอบเว็บไซต์ (Scan History & Timestamp)")
+
+    history_df, backend_info, load_err = _get_cached_scan_history()
+
+    sheet_url = (backend_info.get("details") or {}).get("sheet_url", "")
+    if backend_info.get("is_cloud_persistent"):
+        st.success(f"☁️ กำลังบันทึกและดึงประวัติถาวรจาก **{backend_info['label']}** (เวลาประเทศไทย UTC+7)")
+    else:
+        st.info(
+            f"💾 กำลังใช้งาน **{backend_info['label']}** (เวลาประเทศไทย UTC+7) — "
+            "หากรันบน Streamlit Cloud แนะนำเชื่อมต่อ **Google Sheets** ใน Secrets เพื่อไม่ให้ประวัติหายเมื่อแอป Sleep"
+        )
+
+    btn_cols = st.columns([1.0, 1.3, 1.2, 1.0]) if sheet_url else st.columns([1.0, 1.35, 1.25])
+    with btn_cols[0]:
+        if st.button("🔄 รีเฟรชประวัติ", key=f"{key_prefix}_refresh", width="stretch"):
+            history_df, backend_info, load_err = _get_cached_scan_history(force_refresh=True)
+            st.rerun()
+    with btn_cols[1]:
+        if st.button("🔌 ทดสอบการเชื่อมต่อ Google Sheets", key=f"{key_prefix}_test", width="stretch"):
+            ok, msg = test_gsheets_connection()
+            if ok:
+                st.success(f"✅ {msg}")
+            else:
+                st.warning(f"⚠️ {msg}")
+    with btn_cols[2]:
+        st.download_button(
+            label="⬇️ ดาวน์โหลดประวัติ (.csv)",
+            data=history_df.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"scan_history_{now_thailand_slug()}.csv",
+            mime="text/csv",
+            key=f"{key_prefix}_download",
+            width="stretch",
+        )
+    if sheet_url:
+        with btn_cols[3]:
+            st.link_button("📄 เปิด Google Sheet", sheet_url, width="stretch")
+
+    if load_err:
+        st.warning(f"⚠️ {load_err}")
+
+    if history_df.empty:
+        st.caption(
+            "ยังไม่มีประวัติการสแกน — เมื่อกด **Start Scan** ระบบจะบันทึกวัน-เวลา (UTC+7) และเว็บไซต์ที่ตรวจสอบให้อัตโนมัติ"
+        )
+    else:
+        unique_targets = (
+            history_df["Target Hostname"]
+            .where(history_df["Target Hostname"].str.strip() != "", history_df["Target Input"])
+            .replace("", pd.NA)
+            .dropna()
+            .nunique()
+        )
+        latest_ts = str(history_df["Timestamp (TH)"].iloc[0])
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("จำนวนครั้งที่สแกน", f"{len(history_df):,}")
+        m2.metric("เว็บไซต์ที่ตรวจแล้ว (ไม่ซ้ำ)", f"{int(unique_targets):,}")
+        m3.metric("สแกนล่าสุดเมื่อ (เวลาไทย)", latest_ts)
+
+        hf1, hf2 = st.columns([2.0, 1.0])
+        with hf1:
+            hist_search = st.text_input(
+                "ค้นหาเว็บไซต์ / URL / วันที่",
+                placeholder="เช่น example.com, 2026-11-21...",
+                key=f"{key_prefix}_search",
+            )
+        with hf2:
+            mode_options = ["ทั้งหมด"] + sorted(
+                m for m in history_df["Scan Mode"].dropna().unique().tolist() if str(m).strip()
+            )
+            hist_mode = st.selectbox(
+                "กรองตามโหมดสแกน",
+                options=mode_options,
+                key=f"{key_prefix}_mode",
+            )
+
+        filtered_hist = history_df.copy()
+        if hist_mode != "ทั้งหมด":
+            filtered_hist = filtered_hist[filtered_hist["Scan Mode"] == hist_mode]
+        filtered_hist = filter_df_by_search(filtered_hist, hist_search)
+
+        st.caption(f"กำลังแสดง **{len(filtered_hist)}** จาก **{len(history_df)}** รายการล่าสุด")
+        st.dataframe(
+            filtered_hist,
+            width="stretch",
+            hide_index=True,
+        )
+
+    if not backend_info.get("is_cloud_persistent"):
+        with st.expander("☁️ วิธีตั้งค่าบันทึกประวัติลง Google Sheets ถาวร (ง่ายสุด 3 นาที)"):
+            st.markdown(
+                """
+                1. สร้างไฟล์ **Google Sheets** ใหม่ใน Google Drive ของคุณ
+                2. คลิกเมนู **ส่วนขยาย (Extensions) -> Apps Script**
+                3. ลบโค้ดเดิมออก แล้วคัดลอกโค้ดจากไฟล์ `google_apps_script.gs` ในโปรเจกต์ไปวาง -> กด **Save**
+                4. กด **Deploy -> New deployment -> เลือกประเภท Web app**:
+                   - **Execute as:** `Me`
+                   - **Who has access:** `Anyone`
+                   - กด **Deploy** -> อนุญาตสิทธิ์ -> คัดลอก **Web app URL** (ลงท้ายด้วย `/exec`)
+                5. เข้าหน้า **Streamlit Cloud -> Settings -> Secrets** แล้ววาง:
+                   ```toml
+                   GSHEET_WEBHOOK_URL = "https://script.google.com/macros/s/xxxxx/exec"
+                   GSHEET_URL = "https://docs.google.com/spreadsheets/d/xxxxx/edit"
+                   ```
+                6. กด **Save** แล้วกดปุ่ม **🔌 ทดสอบการเชื่อมต่อ Google Sheets** ด้านบนได้เลย!
+                """
+            )
+
+
 def _get_configured_password() -> str:
     """Read optional APP_PASSWORD from environment or Streamlit Cloud secrets."""
     env_pw = os.environ.get("APP_PASSWORD", "").strip()
@@ -698,6 +829,11 @@ with st.sidebar:
 
     st.divider()
     start_scan = st.button("🚀 Start Scan", type="primary", width="stretch")
+    _sidebar_storage = get_storage_backend_info()
+    if _sidebar_storage["is_cloud_persistent"]:
+        st.caption(f"☁️ Log ประวัติ: **{_sidebar_storage['label']}**")
+    else:
+        st.caption("💾 Log ประวัติ: **Local CSV** (ตั้งค่า Google Sheets ใน Secrets เพื่อเก็บถาวร)")
 
 
 # ---------------------------------------------------------------------------
@@ -716,6 +852,8 @@ if start_scan:
     elif scan_mode_label == "Manual List Mode" and not manual_urls_text.strip():
         st.error("กรุณาวางรายการ URL อย่างน้อย 1 บรรทัดก่อนกด Start Scan")
     else:
+        scan_timestamp = now_thailand_str()
+        formatted_target = format_target_input(scan_mode_label, target_url, manual_urls_text)
         progress_bar = st.progress(0.0)
         status_box = st.empty()
         scan_warnings: list[str] = []
@@ -838,16 +976,46 @@ if start_scan:
             progress_bar.progress(1.0)
             status_box.success("✅ การตรวจสอบเสร็จสมบูรณ์!")
 
+            deep_issue_count = sum(1 for r in deep_results if r.status == "Issue")
+            log_entry = ScanLogEntry(
+                timestamp=scan_timestamp,
+                scan_mode=scan_mode_label,
+                target_input=formatted_target,
+                target_hostname=crawl_summary.target_hostname or extract_fallback_hostname(formatted_target),
+                pages_scanned=crawl_summary.pages_scanned,
+                total_links_checked=crawl_summary.total_links_checked,
+                broken_links=len(crawl_summary.broken_links),
+                redirected_links=len(crawl_summary.redirected_links),
+                deep_check_issues=deep_issue_count,
+                deep_check_enabled=enable_deep_check,
+                status="Completed",
+                notes=f"Warnings: {len(scan_warnings)}" if scan_warnings else "",
+            )
+            log_ok, log_backend, log_msg = record_scan_history(log_entry)
+            st.session_state.pop("scan_history_cache", None)
+
             st.session_state["scan_report"] = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp": scan_timestamp,
                 "summary": crawl_summary,
                 "deep_results": deep_results,
                 "deep_enabled": enable_deep_check,
                 "warnings": scan_warnings,
+                "log_status": (log_ok, log_backend, log_msg),
             }
         except Exception as exc:
             progress_bar.empty()
             status_box.error(f"เกิดข้อผิดพลาดระหว่างการสแกน: {exc}")
+            err_entry = ScanLogEntry(
+                timestamp=scan_timestamp,
+                scan_mode=scan_mode_label,
+                target_input=formatted_target,
+                target_hostname=extract_fallback_hostname(formatted_target),
+                deep_check_enabled=enable_deep_check,
+                status="Error",
+                notes=str(exc)[:300],
+            )
+            record_scan_history(err_entry)
+            st.session_state.pop("scan_history_cache", None)
 
 
 # ---------------------------------------------------------------------------
@@ -882,6 +1050,9 @@ if not report:
             "- จับ **Soft 404** (Highlight ทั้งปุ่มต้นทาง + จุด Error ปลายทาง) และ **Blank Page**\n"
             "- จำลองคลิกปุ่มจริงพร้อม `?gclid=...&utm_...` และ Export Excel/CSV"
         )
+
+    st.divider()
+    render_scan_history_panel(key_prefix="home_hist")
 else:
     summary: CrawlSummary = report["summary"]
     deep_results: list[DeepCheckResult] = report["deep_results"]
@@ -894,9 +1065,17 @@ else:
     deep_issues_list = [r for r in deep_results if r.status == "Issue"]
 
     st.caption(
-        f"สแกนล่าสุดเมื่อ: **{report['timestamp']}** | โหมด: **{summary.scan_mode}**"
+        f"สแกนล่าสุดเมื่อ: **{report['timestamp']} (เวลาไทย UTC+7)** | โหมด: **{summary.scan_mode}**"
         + (f" | Strict Hostname: `{summary.target_hostname}`" if summary.target_hostname else "")
     )
+
+    log_status = report.get("log_status")
+    if log_status:
+        log_ok, _log_backend, log_msg = log_status
+        if log_ok:
+            st.caption(f"📝 {log_msg}")
+        else:
+            st.warning(f"⚠️ {log_msg}")
 
     if summary.skipped_social_count > 0:
         st.info(
@@ -966,7 +1145,7 @@ else:
     st.markdown("")
 
     # Export Toolbar
-    ts_slug = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts_slug = now_thailand_slug()
     excel_bytes = build_excel_bytes(broken_df, redirect_df, deep_issues_df)
     combined_csv_bytes = build_combined_csv_bytes(broken_df, redirect_df, deep_issues_df)
 
@@ -1015,12 +1194,13 @@ else:
 
     st.markdown("")
 
-    # 3 Report Tabs
-    tab1, tab2, tab3 = st.tabs(
+    # 4 Report Tabs
+    tab1, tab2, tab3, tab4 = st.tabs(
         [
             f"❌ Broken / Error Links ({len(broken_df)})",
             f"↪️ Redirected Links ({len(redirect_df)})",
             f"🕵️ Deep Check Issues ({len(deep_issues_df)})",
+            "🕒 ประวัติการสแกน (Scan History)",
         ]
     )
 
@@ -1362,3 +1542,7 @@ else:
                         "Tested URL": st.column_config.LinkColumn("Tested URL"),
                     },
                 )
+
+    # --- Tab 4: Scan History & Timestamp ---
+    with tab4:
+        render_scan_history_panel(key_prefix="report_hist")

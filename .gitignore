@@ -13,6 +13,9 @@ screenshots/
 # Local Streamlit secrets (never commit passwords or API keys)
 .streamlit/secrets.toml
 
+# Local scan history CSV fallback
+scan_history.csv
+
 # OS & editor artifacts
 .DS_Store
 Thumbs.db
