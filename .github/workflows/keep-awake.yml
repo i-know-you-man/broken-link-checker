@@ -1,0 +1,94 @@
+name: Keep Streamlit App Awake
+
+on:
+  schedule:
+    # Run every 6 hours (07:00, 13:00, 19:00, 01:00 Thailand time)
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wake-streamlit:
+    name: Wake Streamlit App
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright & Chromium
+        run: |
+          pip install --quiet playwright
+          playwright install chromium
+
+      - name: Open Streamlit App & Wake if Sleeping
+        env:
+          APP_URL: "https://broken-link-checker-krked6ipqvkhr7dwhmy2hc.streamlit.app/"
+        run: |
+          python - <<'PY'
+          import os
+          import time
+          from playwright.sync_api import sync_playwright
+
+          url = os.environ["APP_URL"]
+          print(f"Visiting: {url}")
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page(viewport={"width": 1280, "height": 800})
+              page.goto(url, wait_until="domcontentloaded", timeout=60000)
+              time.sleep(8)
+
+              # If Streamlit Cloud is hibernating, click the wake-up button
+              wake_btn = page.locator("button:has-text('Yes, get this app back up')")
+              if wake_btn.count() > 0 and wake_btn.first.is_visible():
+                  print("App is sleeping — clicking wake-up button...")
+                  wake_btn.first.click()
+                  time.sleep(45)
+              else:
+                  # Wait a bit to ensure WebSocket session stays active
+                  time.sleep(10)
+
+              print("Page title:", page.title())
+              print("Final URL:", page.url)
+              browser.close()
+          PY
+
+  keepalive-repo:
+    name: Prevent 60-Day GitHub Actions Pause
+    runs-on: ubuntu-latest
+    needs: wake-streamlit
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reset 60-day inactivity timer on keepalive branch (every 45 days)
+        run: |
+          LAST_COMMIT_TS=$(git log --all -1 --format=%ct)
+          NOW_TS=$(date +%s)
+          DAYS_SINCE=$(( (NOW_TS - LAST_COMMIT_TS) / 86400 ))
+          echo "Days since last commit across repo: ${DAYS_SINCE}"
+
+          if [ "${DAYS_SINCE}" -ge 45 ]; then
+            echo "45+ days elapsed — pushing empty keepalive commit to 'keepalive' branch..."
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            if git ls-remote --exit-code --heads origin keepalive >/dev/null 2>&1; then
+              git checkout -B keepalive origin/keepalive
+            else
+              git checkout --orphan keepalive
+              git rm -rf . >/dev/null 2>&1 || true
+            fi
+
+            git commit --allow-empty -m "chore: keep GitHub Actions schedule active"
+            git push origin keepalive
+          else
+            echo "Repo is active (${DAYS_SINCE} days < 45 days). No keepalive commit needed."
+          fi
